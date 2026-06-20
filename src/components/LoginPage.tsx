@@ -13,7 +13,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   return (
     <div className="flex h-screen w-full items-center justify-center relative overflow-hidden">
       <div className="absolute inset-0 z-[-1] bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})` }}>
-         <div className="absolute inset-0 bg-[#0B0D11]/90 backdrop-blur-sm"></div>
+         <div className="absolute inset-0 bg-[#0B0D11]/80 backdrop-blur-[1.5px]"></div>
       </div>
       
       <div className="bg-[#15181E] border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl flex flex-col items-center">

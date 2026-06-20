@@ -20,7 +20,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-[#0B0D11] text-gray-200 font-sans overflow-hidden selection:bg-amber-500/30 selection:text-amber-500 print:bg-white print:text-black print:h-auto print:block print:overflow-visible">
        <div className="absolute inset-0 z-[-1] bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})` }}>
-          <div className="absolute inset-0 bg-[#0B0D11]/90 backdrop-blur-sm"></div>
+          <div className="absolute inset-0 bg-[#0B0D11]/80 backdrop-blur-[1.5px]"></div>
        </div>
        <div className="print:hidden">
           <Sidebar 
