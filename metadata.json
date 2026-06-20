@@ -1,0 +1,6 @@
+{
+  "name": "K-Lixor Pub Management System",
+  "description": "Modern dashboard for pub inventory tracking and staff scheduling, featuring real-time insights.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
