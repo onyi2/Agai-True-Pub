@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "./ui/Card";
-import { dashboardMetrics, salesData, topProducts, expensesData, inventoryUsageData, staffSchedule } from "../data";
+import { dashboardMetrics, salesData, topProducts, expensesData as initialExpenses, inventoryUsageData, staffSchedule } from "../data";
 import { LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, TrendingUp, X, Bell, AlertTriangle } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, X, Bell, AlertTriangle, Plus, FileSpreadsheet, Percent, Landmark } from "lucide-react";
 import { cn } from "../lib/utils";
 import { QuickTasks } from "./QuickTasks";
 import { MiniCalendar } from "./MiniCalendar";
@@ -14,7 +14,7 @@ type Toast = {
 };
 
 const checkOverlap = (shiftStr: string) => {
-  if (shiftStr === 'Off') return false;
+  if (shiftStr === 'Off' || !shiftStr) return false;
   const shifts = shiftStr.split(',').map(s => s.trim());
   if (shifts.length <= 1) return false;
 
@@ -42,8 +42,17 @@ const checkOverlap = (shiftStr: string) => {
   return false;
 };
 
-export function DashboardHome() {
+type DashboardHomeProps = {
+  setCurrentView?: (view: 'dashboard' | 'inventory' | 'scheduling') => void;
+};
+
+export function DashboardHome({ setCurrentView }: DashboardHomeProps = {}) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [expenses, setExpenses] = useState(initialExpenses);
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
+  const [expenseName, setExpenseName] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("Licensing");
 
   const addToast = (message: string, type: 'info' | 'warning' = 'info') => {
     const newToast = { id: Date.now().toString() + Math.random().toString(), message, type };
@@ -64,6 +73,65 @@ export function DashboardHome() {
       });
     });
   }, []);
+
+  const handleAddCustomExpense = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountNum = parseFloat(expenseAmount);
+    if (!expenseName.trim() || isNaN(amountNum) || amountNum <= 0) {
+      addToast("Please enter a valid name and amount", "warning");
+      return;
+    }
+
+    setExpenses(prev => {
+      const exists = prev.find(item => item.name.toLowerCase() === expenseCategory.toLowerCase());
+      if (exists) {
+        return prev.map(item => 
+          item.name.toLowerCase() === expenseCategory.toLowerCase()
+            ? { ...item, value: item.value + amountNum }
+            : item
+        );
+      } else {
+        // Fallback to stock costs
+        return prev.map(item => 
+          item.name === "Stock Costs" 
+            ? { ...item, value: item.value + amountNum }
+            : item
+        );
+      }
+    });
+
+    addToast(`Logged custom expense: ${expenseName} (${expenseCategory}) - KES ${amountNum.toLocaleString()}`, "info");
+    setExpenseName("");
+    setExpenseAmount("");
+    setIsAddingExpense(false);
+  };
+
+  const handleDownloadQuickReport = () => {
+    // Generate a simple report for the owner
+    const csvContent = [
+      ["AGAI TRUE PUB - REALTIME BUSINESS INTELLIGENCE METRICS"],
+      [],
+      ["Metric", "Value", "Trend"],
+      ["Net Sales (Month)", "KES 2,481,200", "+12.4%"],
+      ["Registered Ingress", "KES 840,400", "+8.2%"],
+      ["Breakages & Loss Rate", "KES 41,200", "-4.1%"],
+      ["Operational Expenses", "KES 724,100", "+3.5%"],
+      [],
+      ["EXPENSES BREAKDOWN"],
+      ...expenses.map(e => [e.name, `KES ${e.value.toLocaleString()}`]),
+      [],
+      ["TOP PRODUCTS BY VOLUME"],
+      ...topProducts.map(p => [p.name, p.sales])
+    ].map(e => e.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `agai_pub_metrics_${new Date().toISOString().split('T')[0]}.csv`);
+    link.click();
+    addToast("Real-time Business Intelligence Report Exported!", "info");
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
@@ -167,7 +235,7 @@ export function DashboardHome() {
                 <h3 className="font-semibold text-lg mb-1 text-gray-200">Expenses Breakdown</h3>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-6">This Month</p>
                 <ul className="space-y-3 text-sm">
-                   {expensesData.map((exp, i) => (
+                   {expenses.map((exp, i) => (
                       <li key={i} className="flex items-center gap-3">
                          <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: exp.color, boxShadow: `0 0 8px ${exp.color}40` }}></span>
                          <span className="text-gray-400">{exp.name}</span>
@@ -180,14 +248,14 @@ export function DashboardHome() {
                 <ResponsiveContainer width="100%" height="100%">
                    <PieChart>
                       <Pie
-                         data={expensesData}
+                         data={expenses}
                          innerRadius={65}
                          outerRadius={90}
                          paddingAngle={3}
                          dataKey="value"
                          stroke="none"
                       >
-                         {expensesData.map((entry, index) => (
+                         {expenses.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                          ))}
                       </Pie>
@@ -206,30 +274,56 @@ export function DashboardHome() {
                 <p className="text-xs text-gray-500 uppercase tracking-wider mt-0.5">Quick Actions</p>
              </div>
              <div className="grid grid-cols-2 gap-4 flex-1">
-                <button className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11] hover:border-emerald-500 hover:bg-emerald-900/10 transition-all text-left group flex flex-col justify-center relative overflow-hidden">
-                   <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors"></div>
-                   <div className="text-emerald-500 mb-2 font-medium text-sm">Add Stock</div>
-                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Register arrival (S02)</div>
+                <button 
+                  onClick={() => setCurrentView?.('inventory')}
+                  className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11]/90 hover:border-emerald-500 hover:bg-emerald-900/10 hover:shadow-lg hover:shadow-emerald-950/20 active:scale-98 cursor-pointer transition-all text-left group flex flex-col justify-center relative overflow-hidden"
+                >
+                   <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors animate-pulse"></div>
+                   <div className="text-emerald-500 mb-2 font-medium text-sm flex items-center gap-1.5">
+                     <span>Add Stock</span>
+                     <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                   </div>
+                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Register arrivals dynamically (S02)</div>
                 </button>
-                <button className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11] hover:border-amber-500 hover:bg-amber-900/10 transition-all text-left group flex flex-col justify-center relative overflow-hidden">
+                <button 
+                  onClick={() => setCurrentView?.('inventory')}
+                  className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11]/90 hover:border-amber-500 hover:bg-amber-900/10 hover:shadow-lg hover:shadow-amber-950/20 active:scale-98 cursor-pointer transition-all text-left group flex flex-col justify-center relative overflow-hidden"
+                >
                    <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-colors"></div>
-                   <div className="text-amber-500 mb-2 font-medium text-sm">Record Loss</div>
-                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Breakages & comps</div>
+                   <div className="text-amber-500 mb-2 font-medium text-sm flex items-center gap-1.5">
+                     <span>Record Loss</span>
+                     <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                   </div>
+                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Breakages & comp tracking</div>
                 </button>
-                <button className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11] hover:border-red-500 hover:bg-red-900/10 transition-all text-left group flex flex-col justify-center relative overflow-hidden">
+                <button 
+                  onClick={() => setIsAddingExpense(true)}
+                  className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11]/90 hover:border-red-500 hover:bg-red-900/10 hover:shadow-lg hover:shadow-red-950/20 active:scale-98 cursor-pointer transition-all text-left group flex flex-col justify-center relative overflow-hidden"
+                >
                    <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-red-500/5 rounded-full blur-xl group-hover:bg-red-500/10 transition-colors"></div>
-                   <div className="text-red-500 mb-2 font-medium text-sm">Add Expense</div>
-                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Track general costs</div>
+                   <div className="text-red-500 mb-2 font-medium text-sm flex items-center gap-1.5">
+                     <span>Add Expense</span>
+                     <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                   </div>
+                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Track utility & overhead costs</div>
                 </button>
-                <button className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11] hover:border-blue-500 hover:bg-blue-900/10 transition-all text-left group flex flex-col justify-center relative overflow-hidden">
+                <button 
+                  onClick={handleDownloadQuickReport}
+                  className="p-4 rounded-xl border border-gray-800 bg-[#0B0D11]/90 hover:border-blue-500 hover:bg-blue-900/10 hover:shadow-lg hover:shadow-blue-950/20 active:scale-98 cursor-pointer transition-all text-left group flex flex-col justify-center relative overflow-hidden"
+                >
                    <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors"></div>
-                   <div className="text-blue-500 mb-2 font-medium text-sm">Generate Report</div>
-                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Export real-time data</div>
+                   <div className="text-blue-500 mb-2 font-medium text-sm flex items-center gap-1.5">
+                     <span>Generate Report</span>
+                     <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                   </div>
+                   <div className="text-xs text-gray-500 group-hover:text-gray-300 leading-relaxed">Export real-time pub sheet</div>
                 </button>
              </div>
           </Card>
-          <div className="lg:col-span-1 h-[400px]">
-             <MiniCalendar /><QuickTasks onTaskAdd={(msg) => addToast(`New task added: ${msg}`, 'info')} />
+
+          <div className="lg:col-span-1 flex flex-col gap-6">
+             <MiniCalendar />
+             <QuickTasks onTaskAdd={(msg) => addToast(`New task added: ${msg}`, 'info')} />
           </div>
        </div>
 
@@ -274,6 +368,81 @@ export function DashboardHome() {
              </div>
           </Card>
        </div>
-    </div>
+
+       {/* Dynamic Modal - Log Custom Expense */}
+       {isAddingExpense && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm transition-all duration-300">
+           <Card className="w-full max-w-md bg-[#15181E] border-gray-800 p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.85)]">
+             <div className="flex items-center justify-between p-5 border-b border-gray-800 bg-[#1A1E25]">
+               <div className="flex items-center gap-2">
+                 <Landmark className="w-5 h-5 text-red-500" />
+                 <h3 className="text-md font-semibold text-gray-200">Log Overhead Expense</h3>
+               </div>
+               <button onClick={() => setIsAddingExpense(false)} className="p-1.5 text-gray-500 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
+                 <X className="w-5 h-5" />
+               </button>
+             </div>
+
+             <form onSubmit={handleAddCustomExpense} className="p-6 space-y-4 text-left">
+               <div>
+                 <label className="block text-xs uppercase tracking-wider text-gray-500 font-extrabold mb-1.5">Expense Label</label>
+                 <input 
+                   type="text" 
+                   required
+                   value={expenseName}
+                   onChange={(e) => setExpenseName(e.target.value)}
+                   placeholder="e.g. Electricity, Water bill, DJ Hire"
+                   className="w-full bg-[#0B0D11] border border-gray-800 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none rounded-lg p-2.5 text-sm text-gray-200"
+                 />
+               </div>
+
+               <div>
+                 <label className="block text-xs uppercase tracking-wider text-gray-500 font-extrabold mb-1.5">Expense Category</label>
+                 <select 
+                   value={expenseCategory}
+                   onChange={(e) => setExpenseCategory(e.target.value)}
+                   className="w-full bg-[#0B0D11] border border-gray-800 focus:border-red-500 outline-none rounded-lg p-2.5 text-sm text-gray-300"
+                 >
+                   <option value="Licensing">Licensing / Gov Fees</option>
+                   <option value="Utilities">Utilities & Bills</option>
+                   <option value="Staff Costs">Staff Costs & Extras</option>
+                   <option value="Stock Costs">Stock Replenishment</option>
+                   <option value="Marketing">Marketing / Events</option>
+                 </select>
+               </div>
+
+               <div>
+                 <label className="block text-xs uppercase tracking-wider text-gray-500 font-extrabold mb-1.5">Amount (KES)</label>
+                 <input 
+                   type="number" 
+                   required
+                   min={1}
+                   value={expenseAmount}
+                   onChange={(e) => setExpenseAmount(e.target.value)}
+                   placeholder="e.g. 15000"
+                   className="w-full bg-[#0B0D11] border border-gray-800 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none rounded-lg p-2.5 text-sm text-gray-200 font-mono"
+                 />
+               </div>
+
+               <div className="p-4 border-t border-gray-800 pt-5 mt-4 flex justify-end gap-3">
+                 <button 
+                   type="button"
+                   onClick={() => setIsAddingExpense(false)} 
+                   className="px-4 py-2 border border-gray-800 text-gray-400 text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all"
+                 >
+                   Cancel
+                 </button>
+                 <button 
+                   type="submit"
+                   className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg transition-all"
+                 >
+                   Log Expense
+                 </button>
+               </div>
+             </form>
+           </Card>
+         </div>
+       )}
+     </div>
   );
 }

@@ -54,7 +54,10 @@ export function MiniCalendar() {
   const startDay = new Date(year, month, 1).getDay(); // 0 (Sun) to 6 (Sat)
   
   const conflictDaysOfWeek = getDayConflicts();
-  const hasPendingInventory = inventoryList.some(item => item.status === 'Low' || item.status === 'Critical');
+  const hasPendingInventory = inventoryList.some(item => {
+    const stock = item.openingStock + (item.received || 0) - (item.sold || 0) + (item.variance || 0);
+    return stock <= (item.reorderLevel || 10);
+  });
 
   const days = Array.from({ length: 42 }, (_, i) => {
     const dayNum = i - startDay + 1;

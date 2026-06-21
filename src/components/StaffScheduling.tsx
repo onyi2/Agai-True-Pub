@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card } from "./ui/Card";
 import { staffSchedule } from "../data";
-import { Calendar as CalendarIcon, UserPlus, Clock, Users, AlertTriangle, Save, ClipboardList, Coins } from "lucide-react";
+import { Calendar as CalendarIcon, UserPlus, Clock, Users, AlertTriangle, Save, ClipboardList, Coins, X } from "lucide-react";
 import { cn } from "../lib/utils";
 
 const calculateShiftHours = (shiftStr: string) => {
@@ -54,6 +54,43 @@ export function StaffScheduling() {
     { id: 't2', name: 'Standard Floor', pattern: { Mon: "16:00 - 00:00", Tue: "16:00 - 00:00", Wed: "Off", Thu: "16:00 - 00:00", Fri: "18:00 - 04:00", Sat: "18:00 - 04:00", Sun: "14:00 - 22:00" } },
   ]);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStaffId, setSelectedStaffId] = useState<number>(1);
+  const [selectedDay, setSelectedDay] = useState("Mon");
+  const [shiftValue, setShiftValue] = useState("18:00 - 02:00");
+  const [isOff, setIsOff] = useState(false);
+
+  const openShiftEditor = (staffId: number, day: string, currentShift: string) => {
+    setSelectedStaffId(staffId);
+    setSelectedDay(day);
+    if (currentShift === 'Off') {
+      setIsOff(true);
+      setShiftValue("18:00 - 02:00");
+    } else {
+      setIsOff(false);
+      setShiftValue(currentShift);
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSaveShift = (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalVal = isOff ? 'Off' : shiftValue.trim() || 'Off';
+    setSchedule(prev => prev.map(s => {
+      if (s.id === selectedStaffId) {
+        return {
+          ...s,
+          shifts: {
+            ...s.shifts,
+            [selectedDay]: finalVal
+          }
+        };
+      }
+      return s;
+    }));
+    setIsModalOpen(false);
+  };
+
   const applyTemplate = (staffId: number, templateId: string) => {
     if (!templateId) return;
     const template = templates.find(t => t.id === templateId);
@@ -84,7 +121,16 @@ export function StaffScheduling() {
                 <CalendarIcon className="w-4 h-4" />
                 This Week
              </button>
-             <button className="px-5 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-500 transition-all flex items-center gap-2">
+             <button 
+                onClick={() => {
+                   setSelectedStaffId(schedule[0]?.id || 1);
+                   setSelectedDay("Mon");
+                   setIsOff(false);
+                   setShiftValue("18:00 - 02:00");
+                   setIsModalOpen(true);
+                }}
+                className="px-5 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-500 transition-all flex items-center gap-2"
+             >
                 <UserPlus className="w-4 h-4" />
                 Add Shift
              </button>
@@ -156,9 +202,13 @@ export function StaffScheduling() {
                             const shift = staff.shifts[day as keyof typeof staff.shifts];
                             const isOff = shift === 'Off';
                             return (
-                               <td key={day} className="px-2 py-3 text-center align-top">
+                               <td 
+                                  key={day} 
+                                  onClick={() => openShiftEditor(staff.id, day, shift)}
+                                  className="px-2 py-3 text-center align-top cursor-pointer hover:bg-gray-800/10 transition-colors"
+                               >
                                   {isOff ? (
-                                    <div className="px-2 py-2 rounded-lg text-xs font-medium border flex items-center justify-center w-[110px] mx-auto transition-colors bg-[#0B0D11] border-gray-800 text-gray-500/50">
+                                    <div className="px-2 py-2 rounded-lg text-xs font-medium border flex items-center justify-center w-[110px] mx-auto transition-colors bg-[#0B0D11] border-gray-800 text-gray-500/50 hover:border-gray-600">
                                        Off
                                     </div>
                                   ) : (() => {
@@ -222,6 +272,98 @@ export function StaffScheduling() {
              </table>
           </div>
        </Card>
+
+        {/* Dynamic Shift Editor Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm transition-all duration-300 session-modal">
+            <Card className="w-full max-w-md bg-[#15181E] border-gray-800 p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.85)]">
+               <div className="flex items-center justify-between p-5 border-b border-gray-800 bg-[#1A1E25]">
+                  <div className="flex items-center gap-2">
+                     <Clock className="w-5 h-5 text-emerald-500" />
+                     <h3 className="text-md font-semibold text-gray-200">
+                        Edit Shift: {schedule.find(s => s.id === selectedStaffId)?.name}
+                     </h3>
+                  </div>
+                  <button onClick={() => setIsModalOpen(false)} className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors cursor-pointer">
+                     <X className="w-5 h-5" />
+                  </button>
+               </div>
+
+               <form onSubmit={handleSaveShift} className="p-6 space-y-4 text-left">
+                  <div>
+                     <label className="block text-xs uppercase tracking-wider text-gray-500 font-extrabold mb-1.5">Staff Member</label>
+                     <select 
+                        value={selectedStaffId}
+                        onChange={(e) => setSelectedStaffId(Number(e.target.value))}
+                        className="w-full bg-[#0B0D11] border border-gray-800 focus:border-emerald-500 outline-none rounded-lg p-2.5 text-sm text-gray-300"
+                     >
+                        {schedule.map(s => (
+                           <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                        ))}
+                     </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <label className="block text-xs uppercase tracking-wider text-gray-500 font-extrabold mb-1.5">Day of Week</label>
+                        <select 
+                           value={selectedDay}
+                           onChange={(e) => setSelectedDay(e.target.value)}
+                           className="w-full bg-[#0B0D11] border border-gray-800 focus:border-emerald-500 outline-none rounded-lg p-2.5 text-sm text-gray-300"
+                        >
+                           {days.map(d => (
+                              <option key={d} value={d}>{d}</option>
+                           ))}
+                        </select>
+                     </div>
+                     <div>
+                        <label className="block text-xs uppercase tracking-wider text-gray-500 font-extrabold mb-1.5">Status</label>
+                        <div className="flex items-center gap-2 h-[42px]">
+                           <input 
+                              type="checkbox" 
+                              id="isOffCheck"
+                              checked={isOff}
+                              onChange={(e) => setIsOff(e.target.checked)}
+                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                           />
+                           <label htmlFor="isOffCheck" className="text-sm text-gray-400 cursor-pointer select-none">Staff is Off</label>
+                        </div>
+                     </div>
+                  </div>
+
+                  {!isOff && (
+                     <div>
+                        <label className="block text-xs uppercase tracking-wider text-gray-500 font-extrabold mb-1.5">Shift Pattern Hours</label>
+                        <input 
+                           type="text"
+                           required
+                           value={shiftValue}
+                           onChange={(e) => setShiftValue(e.target.value)}
+                           placeholder="e.g. 18:00 - 02:00, or multiple: 12:00 - 16:00, 18:00 - 00:00"
+                           className="w-full bg-[#0B0D11] border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none rounded-lg p-2.5 text-sm text-gray-200 font-mono"
+                        />
+                     </div>
+                  )}
+
+                  <div className="p-4 border-t border-gray-800 pt-5 mt-4 flex justify-end gap-3">
+                     <button 
+                        type="button"
+                        onClick={() => setIsModalOpen(false)} 
+                        className="px-4 py-2 border border-gray-800 text-gray-400 text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all flex items-center justify-center cursor-pointer"
+                     >
+                        Cancel
+                     </button>
+                     <button 
+                        type="submit"
+                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg transition-all flex items-center justify-center cursor-pointer"
+                     >
+                        Save Shift
+                     </button>
+                  </div>
+               </form>
+            </Card>
+          </div>
+        )}
     </div>
   );
 }

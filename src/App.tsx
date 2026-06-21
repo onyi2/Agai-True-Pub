@@ -35,7 +35,7 @@ export default function App() {
              <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
           </div>
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 relative z-0 print:overflow-visible print:p-0">
-             {currentView === 'dashboard' && <DashboardHome />}
+             {currentView === 'dashboard' && <DashboardHome setCurrentView={setCurrentView} />}
              {currentView === 'inventory' && <InventoryManagement />}
              {currentView === 'scheduling' && <StaffScheduling />}
           </main>

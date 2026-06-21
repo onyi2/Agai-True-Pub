@@ -2,6 +2,7 @@ import { cn } from "../lib/utils";
 import { LayoutDashboard, Package, Users, Settings, LogOut, Wine } from "lucide-react";
 import logo from "/src/assets/images/agai_logo_1781992158822.jpg";
 import { Brand } from "./Brand";
+import { motion } from "motion/react";
 
 export type ViewState = 'dashboard' | 'inventory' | 'scheduling';
 
@@ -27,7 +28,21 @@ export function Sidebar({ currentView, setCurrentView, isSidebarOpen, setIsSideb
       )}>
         <div className="p-8 pb-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <img src={logo} alt="AGAI True Pub Logo" className="w-12 h-12 rounded" />
+            <motion.img 
+              src={logo} 
+              alt="AGAI True Pub Logo" 
+              className="w-12 h-12 rounded shadow-md border border-amber-500/10 cursor-pointer" 
+              animate={{
+                y: [0, -6, 0]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              whileHover={{ scale: 1.1, rotate: [0, -2, 2, 0] }}
+              whileTap={{ scale: 0.95 }}
+            />
             <Brand />
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-400">
