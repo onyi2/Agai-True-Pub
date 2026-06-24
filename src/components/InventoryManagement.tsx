@@ -766,10 +766,10 @@ Agai True Pub, Nairobi
               </button>
               <button 
                 onClick={() => setIsBulkImporting(true)}
-                className="px-3.5 py-2 border border-sky-500/25 bg-sky-500/10 text-sky-400 text-sm font-semibold rounded-lg hover:bg-sky-500/20 hover:border-sky-500/50 transition-all flex items-center gap-2"
+                className="px-4 py-2 bg-[#F59E0B] text-gray-950 text-sm font-semibold rounded-lg hover:bg-[#D97706] transition-all flex items-center gap-2 shadow-sm"
               >
                  <Upload className="w-4 h-4" />
-                 <span>Bulk Import</span>
+                 <span>Upload Daily Sales Report</span>
               </button>
               <button 
                 onClick={() => setIsAddingItem(true)}
@@ -1940,8 +1940,8 @@ Agai True Pub, Nairobi
              <Card className="w-full max-w-2xl bg-[#15181E] border-gray-800 p-0 overflow-hidden shadow-2xl">
                  <div className="flex items-center justify-between p-5 border-b border-gray-800 bg-[#1A1E25]">
                     <div className="flex items-center gap-2">
-                       <Upload className="w-5 h-5 text-sky-400" />
-                       <h3 className="text-md font-semibold text-gray-200 font-sans">Bulk Import Liquors (CSV / Excel Format)</h3>
+                       <Upload className="w-5 h-5 text-amber-500" />
+                       <h3 className="text-md font-semibold text-gray-200 font-sans">Upload Daily Sales Report</h3>
                     </div>
                     <button 
                       onClick={() => {
@@ -1958,9 +1958,9 @@ Agai True Pub, Nairobi
                  
                  <div className="p-6 space-y-5 max-h-[600px] overflow-y-auto text-left">
                      {/* Template Guide */}
-                     <div className="bg-sky-950/10 border border-sky-500/15 rounded-xl p-4 space-y-2 text-xs">
-                        <h4 className="font-bold text-sky-400 flex items-center gap-1.5 font-sans">
-                           <Info className="w-4 h-4 text-sky-450" /> Recommended Column Format Guide
+                     <div className="bg-amber-950/10 border border-amber-500/15 rounded-xl p-4 space-y-2 text-xs">
+                        <h4 className="font-bold text-amber-500 flex items-center gap-1.5 font-sans">
+                           <Info className="w-4 h-4 text-amber-400" /> Recommended Column Format Guide
                         </h4>
                         <p className="text-gray-400 font-sans">
                            Copy-paste tab-separated columns from Excel, or select a comma-separated CSV file. The first row must be the headers:
@@ -1969,7 +1969,7 @@ Agai True Pub, Nairobi
                            Brand Name, Category, Pack Size, Opening Stock, Buying Cost, Retail Price, Reorder Level, Supplier Name
                         </div>
                         <p className="text-gray-500 italic font-sans text-[10.5px]">
-                           * Brand Name or Name is required. Categorised items template: Beer, Whisky, Gin, Rum, Vodka, Tequila, Wine, Mixer.
+                           * Note: Currently using the standard bulk ingest template format.
                         </p>
                      </div>
 
@@ -1981,7 +1981,7 @@ Agai True Pub, Nairobi
                        className={cn(
                          "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all",
                          isDraggingBulk 
-                           ? "border-sky-500 bg-sky-950/20 animate-pulse" 
+                           ? "border-amber-500 bg-amber-950/20 animate-pulse" 
                            : "border-gray-800 hover:border-gray-700 bg-[#0B0D11]/40"
                        )}
                        onClick={() => document.getElementById("bulk-file-input")?.click()}
@@ -1993,9 +1993,9 @@ Agai True Pub, Nairobi
                           onChange={handleBulkFileUpload}
                           className="hidden"
                         />
-                        <Upload className="w-8 h-8 text-sky-400/85 mx-auto mb-2" />
+                        <Upload className="w-8 h-8 text-amber-500/85 mx-auto mb-2" />
                         <span className="text-xs font-semibold text-gray-300 block font-sans">
-                           Drag & drop your CSV / TSV file here or <span className="text-sky-400 hover:underline">browse files</span>
+                           Drag & drop your CSV / TSV file here or <span className="text-amber-500 hover:underline">browse files</span>
                         </span>
                         <span className="text-[10px] text-gray-500 block mt-1 font-mono">Supports .csv, .tsv, and .txt files</span>
                      </div>
@@ -2092,12 +2092,12 @@ Agai True Pub, Nairobi
                       className={cn(
                         "px-5 py-2 font-bold text-sm rounded-lg transition-all shadow-md flex items-center gap-2",
                         parsedBulkItems.length > 0 
-                          ? "bg-sky-600 hover:bg-sky-500 text-white cursor-pointer" 
+                          ? "bg-amber-600 hover:bg-amber-500 text-white cursor-pointer" 
                           : "bg-gray-800 text-gray-650 cursor-not-allowed"
                       )}
                     >
                        <CheckCircle2 className="w-4 h-4" />
-                       Confirm Bulk Import ({parsedBulkItems.length})
+                       Confirm Upload ({parsedBulkItems.length})
                     </button>
                  </div>
              </Card>
